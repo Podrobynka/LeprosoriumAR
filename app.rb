@@ -3,48 +3,15 @@ require 'sinatra'
 require 'sinatra/reloader' # if development?
 require 'sinatra/activerecord'
 
-def init_db
-  @db = SQLite3::Database.new 'leprosorium.db'
-  @db.results_as_hash = true
+set :database, 'sqlite3:leprosorium.db'
+
+class Post < ActiveRecord::Base
+  # validates :content, presence: true,
+  # validates :author, presence: true
 end
 
-def getting_post
-  results = @db.execute 'select * from posts where id = ?', [@post_id]
-  @row = results[0]
-end
-
-def getting_comments
-  @comments = @db.execute 'select * from comments where post_id = ? order by id', [@post_id]
-end
-
-before do
-  init_db
-end
-
-configure do
-  init_db
-
-  @db.execute %(
-    CREATE TABLE IF NOT EXISTS
-    "posts"
-    (
-      "id" INTEGER PRIMARY KEY AUTOINCREMENT,
-      "created_date" DATE,
-      "content" TEXT,
-      "author" TEXT
-    )
-  )
-
-  @db.execute %(
-    CREATE TABLE IF NOT EXISTS
-    "comments"
-    (
-      "id" INTEGER PRIMARY KEY AUTOINCREMENT,
-      "created_date" DATE,
-      "comment" TEXT,
-      "post_id" INTEGER
-    )
-  )
+class Comment < ActiveRecord::Base
+  # validates :comment, presence: true
 end
 
 get '/' do
