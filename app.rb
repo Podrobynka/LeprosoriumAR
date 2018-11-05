@@ -1,6 +1,7 @@
 require 'rubygems'
 require 'sinatra'
-require 'sqlite3'
+require 'sinatra/reloader' # if development?
+require 'sinatra/activerecord'
 
 def init_db
   @db = SQLite3::Database.new 'leprosorium.db'
