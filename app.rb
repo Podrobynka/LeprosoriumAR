@@ -6,16 +6,19 @@ require 'sinatra/activerecord'
 set :database, 'sqlite3:leprosorium.db'
 
 class Post < ActiveRecord::Base
-  # validates :content, presence: true,
-  # validates :author, presence: true
+  has_many :comments
+  validates :content, presence: true
+  validates :author, presence: true
 end
 
 class Comment < ActiveRecord::Base
-  # validates :comment, presence: true
+  belongs_to :post
+  validates :body, presence: true
 end
 
 get '/' do
-  @posts = @db.execute 'select * from posts order by id desc'
+  @posts = Post.order(created_at: :desc)
+
   erb :main
 end
 
@@ -24,61 +27,31 @@ get '/new' do
 end
 
 post '/new' do
-  content = params[:content]
-  author = params[:author]
+  @post = Post.new(params)
 
-  hh = {
-    content: 'Type text',
-    author: 'Enter your name'
-  }
-
-  hh.each do |key, _value|
-    if params[key] == ''
-      @error = hh[key]
-      return erb :new
-    end
+  if @post.save
+    redirect to '/'
+  else
+    @error = @post.errors.full_messages.first
+    erb :new
   end
-
-  # if content.length <= 0
-  #   @error = 'Type text'
-  #   return erb :new
-  # end
-
-  @db.execute %(
-    insert into
-    posts (created_date, content, author)
-    values (datetime(), ?, ?)
-    ), content, author
-
-  redirect to '/'
 end
 
 get '/details/:post_id' do
-  @post_id = params[:post_id]
-
-  getting_post
-  getting_comments
+  @post = Post.find(params[:post_id])
+  @comments = @post.comments
 
   erb :details
 end
 
 post '/details/:post_id' do
-  @post_id = params[:post_id]
-  comment = params[:comment]
+  @post = Post.find(params[:post_id])
+  comment = Comment.new(params)
 
-  getting_post
-  getting_comments
-
-  if comment.length.zero?
-    @error = 'Type comment'
-    return erb :details
+  if comment.save
+    redirect to("/details/#{params[:post_id]}")
+  else
+    @error = comment.errors.full_messages.first
+    erb :details
   end
-
-  @db.execute %(
-    insert into
-    comments (created_date, comment, post_id)
-    values (datetime(), ?, ?)
-    ), comment, @post_id
-
-  redirect to('/details/' + @post_id)
 end
